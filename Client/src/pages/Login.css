@@ -1,0 +1,131 @@
+:root{
+  --green-700:#0f6f45;
+  --green-600:#179058;
+  --muted:#6b7280;
+  --bg:#f6fbf7;
+  --card:#ffffff;
+  --radius:12px;
+  --shadow:0 10px 30px rgba(11,86,55,0.08);
+}
+
+body{
+  background:var(--bg);
+  font-family:Inter,system-ui,Arial;
+}
+
+.login-page{
+  min-height:76vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:30px 16px;
+}
+
+.login-card{
+  width:100%;
+  max-width:420px;
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:22px;
+  box-shadow:var(--shadow);
+}
+
+/* switch buttons */
+.switch-row{
+  display:flex;
+  gap:10px;
+  margin-bottom:16px;
+}
+
+.switch-btn{
+  flex:1;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid rgba(0,0,0,0.1);
+  background:#fff;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.switch-btn.active{
+  background:linear-gradient(180deg,var(--green-600),var(--green-700));
+  color:#fff;
+  border:none;
+}
+
+/* inputs */
+label{
+  display:flex;
+  flex-direction:column;
+  font-size:14px;
+  gap:6px;
+  margin-bottom:6px;
+}
+
+.input{
+  padding:10px 12px;
+  border-radius:8px;
+  border:1px solid rgba(0,0,0,0.15);
+}
+
+.input.error{
+  border-color:#dc2626;
+}
+
+.field-error{
+  font-size:12px;
+  color:#dc2626;
+}
+
+/* password row */
+.pwd-row{
+  display:flex;
+  gap:8px;
+}
+
+.show-btn{
+  padding:8px 10px;
+  border-radius:8px;
+  border:1px solid rgba(0,0,0,0.15);
+  background:#fff;
+  cursor:pointer;
+}
+
+/* buttons */
+.btn{
+  padding:10px 12px;
+  border-radius:8px;
+  cursor:pointer;
+  border:1px solid rgba(0,0,0,0.1);
+  background:#fff;
+  font-weight:600;
+  margin-top:10px;
+}
+
+.btn.primary{
+  background:linear-gradient(180deg,var(--green-600),var(--green-700));
+  color:#fff;
+  border:none;
+}
+
+.btn.logout{
+  background:#dc2626;
+  color:#fff;
+  border:none;
+  margin-top:10px;
+}
+
+/* error box */
+.error-box{
+  background:#ffe5e7;
+  padding:8px;
+  border-radius:8px;
+  color:#b91c1c;
+  border:1px solid #fca5a5;
+  margin-bottom:10px;
+}
+
+.muted{
+  color:var(--muted);
+  font-size:13px;
+}

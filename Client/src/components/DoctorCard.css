@@ -1,0 +1,135 @@
+/* Final polished full-width row card */
+
+.doctor-row-card.final {
+  width: 100%;
+  background: #fff;
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 18px;
+  border-radius: 14px;
+  box-shadow: 0 10px 26px rgba(8,20,40,0.06);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+
+.doctor-row-card.final:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 44px rgba(8,20,40,0.12);
+}
+
+/* Left image */
+.doctor-row-image {
+  width: 160px;
+  height: 140px;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+  border: 3px solid transparent;
+  background: linear-gradient(180deg,#f6fbff,#eef6ff);
+}
+
+.doctor-row-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .25s ease;
+}
+
+.doctor-row-card.final:hover .doctor-row-image img {
+  transform: scale(1.03);
+}
+
+/* online/offline badge */
+.online-badge, .offline-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 12px;
+  color: white;
+  box-shadow: 0 4px 10px rgba(2,6,23,0.08);
+}
+
+.online-badge { background: linear-gradient(90deg,#00c853,#007f4d); }
+.offline-badge { background: #9ca3af; }
+
+/* Info area */
+.doctor-row-info { flex: 1; min-width: 220px; }
+
+.top-row { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.top-row h3 { margin:0; font-size:20px; color:#071126; }
+.rating { color:#ffb400; font-weight:800; }
+
+/* speciality/hospital */
+.speciality { color:#007bff; font-weight:600; margin:6px 0 2px; }
+.hospital { color:#6b7280; margin:0 0 8px; }
+
+/* meta */
+.meta { color:#374151; font-size:13px; display:flex; gap:10px; align-items:center; margin-bottom:8px; }
+.meta-item { display:inline-block; }
+.meta-sep { color:#e6e9ef; }
+
+/* about */
+.about { color:#374151; margin:8px 0 12px; font-size:14px; line-height:1.45; }
+
+/* availability chips */
+.availability { margin-top:6px; }
+.slots { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+
+.slot-chip {
+  background: linear-gradient(180deg,#f3f6ff,#eef4ff);
+  border: 1px solid #e6ecff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: transform .12s ease, background .12s ease;
+}
+
+.slot-chip:hover { transform: translateY(-3px); background: #e9f0ff; }
+
+/* no-slots style */
+.no-slots { color:#9aa3b2; font-size:13px; }
+
+/* actions */
+.doctor-row-actions {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  align-items:center;
+  min-width:150px;
+}
+
+/* buttons (reuse .btn classes if present) */
+.btn {
+  padding:10px 14px;
+  border-radius:10px;
+  text-decoration:none;
+  display:inline-block;
+  text-align:center;
+  font-weight:700;
+}
+
+.btn.primary {
+  background: linear-gradient(90deg,#007bff,#0056b3);
+  color:white;
+}
+
+.btn.ghost {
+  background:#f8fafc;
+  color:#071126;
+  border:1px solid #e6e9ef;
+}
+
+/* responsive */
+@media (max-width: 920px) {
+  .doctor-row-card.final { flex-direction: column; align-items:center; text-align:center; }
+  .doctor-row-image { width:100%; height:220px; }
+  .doctor-row-actions { flex-direction:row; width:100%; justify-content:center; }
+  .doctor-row-info { padding: 10px 0; }
+  .slots { justify-content:center; }
+}

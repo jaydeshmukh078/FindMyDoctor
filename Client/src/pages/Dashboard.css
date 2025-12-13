@@ -1,0 +1,61 @@
+.dashboard-page {
+  padding: 30px;
+}
+
+.dashboard-page h2 {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.dash-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.dash-card {
+  background: white;
+  padding: 18px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.dash-card h3 {
+  font-size: 15px;
+  color: gray;
+  margin-bottom: 8px;
+}
+
+.dash-card p {
+  font-size: 24px;
+  font-weight: bold;
+  color: #007bff;
+}
+
+.dash-info {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.booking-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.booking-table th,
+.booking-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.booking-table th {
+  background: #007bff;
+  color: white;
+}
