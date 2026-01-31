@@ -2,72 +2,114 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./DoctorCard.css";
 
-/**
- * DoctorCard (final)
- * - Expects doctor object with: id, name, speciality, hospital, experience, fee, rating, image, availability[], online
- * - Clicking a slot navigates to /book/:id with state { doctor, prefill: { date, time } }
- * - Book Now passes doctor in state
- */
-
 function DoctorCard({ doctor }) {
   const navigate = useNavigate();
-  const id = doctor.id || doctor._id || "unknown";
 
-  // format slot "YYYY-MM-DD HH:MM" -> "DD Mon • HH:MM"
-  function formatSlot(slot) {
+  // 🔑 Doctor ID (backend / frontend safe)
+  const id = doctor._id || doctor.id;
+
+  /* ===============================
+     🔥 SLOT NORMALIZER (VERY IMPORTANT)
+     Backend:
+       availableSlots: [
+         { date: "YYYY-MM-DD", slots: ["10:00 AM", "10:30 AM"] }
+       ]
+     Frontend dummy:
+       availability: ["YYYY-MM-DD HH:MM"]
+  =============================== */
+  const slots = Array.isArray(doctor.availability)
+    ? doctor.availability
+    : Array.isArray(doctor.availableSlots)
+    ? doctor.availableSlots.flatMap((d) =>
+        (d.slots || []).map((t) => `${d.date} ${t}`)
+      )
+    : [];
+
+  // slot formatter
+  const formatSlot = (slot) => {
     try {
       const [dateStr, timeStr] = slot.split(" ");
       const d = new Date(`${dateStr}T${timeStr}`);
       const day = d.getDate();
       const month = d.toLocaleString(undefined, { month: "short" });
-      const time = timeStr;
-      return `${day} ${month} • ${time}`;
+      return `${day} ${month} • ${timeStr}`;
     } catch {
       return slot;
     }
-  }
+  };
 
-  function handleSlotClick(slot) {
-    const [d, t] = slot.split(" ");
+  // slot click
+  const handleSlotClick = (slot) => {
+    const [date, time] = slot.split(" ");
     navigate(`/book/${id}`, {
-      state: { doctor, prefill: { date: d, time: t } },
+      state: { doctor, prefill: { date, time } },
     });
-  }
+  };
 
   return (
     <article className="doctor-row-card final">
+      {/* IMAGE + STATUS */}
       <div className="doctor-row-image">
-        <img src={doctor.image} alt={doctor.name} loading="lazy" />
-        {doctor.online ? <span className="online-badge">Online</span> : <span className="offline-badge">Offline</span>}
+        <img
+          src={
+            doctor.image ||
+            doctor.imageUrl ||
+            "https://via.placeholder.com/150"
+          }
+          alt={doctor.name}
+        />
+
+        {doctor.online === true ? (
+          <span className="online-badge">Online</span>
+        ) : (
+          <span className="offline-badge">Offline</span>
+        )}
       </div>
 
+      {/* INFO */}
       <div className="doctor-row-info">
         <div className="top-row">
           <h3>{doctor.name}</h3>
-          <div className="rating" title={`Rating ${doctor.rating || 4.5}`}>★ {doctor.rating || 4.5}</div>
+          <div className="rating">
+            ★ {doctor.rating || doctor.ratingAverage || 4.5}
+          </div>
         </div>
 
-        <p className="speciality">{doctor.speciality}</p>
-        <p className="hospital">{doctor.hospital}</p>
+        <p className="speciality">
+          {doctor.speciality || doctor.specialization || "Specialist"}
+        </p>
+
+        <p className="hospital">
+          {doctor.hospital || doctor.location || "Clinic"}
+        </p>
 
         <div className="meta">
-          <span className="meta-item">🕒 {doctor.experience}</span>
-          <span className="meta-sep">•</span>
-          <span className="meta-item">💰 {doctor.fee}</span>
+          <span>🕒 {doctor.experience || "—"} </span>
+          <span>•</span>
+          <span>
+            💰{" "}
+            {doctor.fee
+              ? doctor.fee
+              : doctor.fees
+              ? `₹${doctor.fees}`
+              : "—"}
+          </span>
         </div>
 
-        <p className="about">{doctor.about}</p>
+        <p className="about">
+          {doctor.about || "Experienced medical professional."}
+        </p>
 
+        {/* SLOTS */}
         <div className="availability">
           <strong>Available slots</strong>
           <div className="slots">
-            {doctor.availability && doctor.availability.length > 0 ? (
-              doctor.availability.slice(0, 6).map((s) => (
+            {slots.length > 0 ? (
+              slots.slice(0, 6).map((s) => (
                 <button
                   key={s}
                   className="slot-chip"
                   onClick={() => handleSlotClick(s)}
-                  title={`Book ${formatSlot(s)}`}
                 >
                   {formatSlot(s)}
                 </button>
@@ -79,8 +121,15 @@ function DoctorCard({ doctor }) {
         </div>
       </div>
 
+      {/* ACTIONS */}
       <div className="doctor-row-actions">
-        <Link to={`/doctors/${id}`} state={{ doctor }} className="btn ghost">View Profile</Link>
+        <Link
+          to={`/doctors/${id}`}
+          state={{ doctor }}
+          className="btn ghost"
+        >
+          View Profile
+        </Link>
 
         <Link
           to={`/book/${id}`}

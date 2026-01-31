@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
 
 import Home from "./pages/Home";
@@ -7,6 +7,10 @@ import DoctorProfile from "./pages/DoctorProfile";
 import BookAppointment from "./pages/BookAppointment";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import PrivateRoute from "./components/PrivateRoute";
+import AddDoctor from "./pages/AddDoctor";
+import ManageSlots from "./pages/ManageSlots";
+
 import "./App.css";
 
 function App() {
@@ -15,168 +19,147 @@ function App() {
   const [query, setQuery] = useState("");
   const [sosLoading, setSosLoading] = useState(false);
 
+  const isLoggedIn = !!localStorage.getItem("token");
+
+  useEffect(() => {
+    if (!localStorage.getItem("token")) {
+      localStorage.removeItem("user");
+    }
+  }, []);
+
   const submitSearch = (e) => {
-    e?.preventDefault();
-    const q = query.trim();
-    if (q) navigate("/doctors", { state: { q } });
+    e.preventDefault();
+    if (query.trim()) {
+      navigate("/doctors", { state: { q: query.trim() } });
+    }
     setMobileOpen(false);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login");
+  };
+
   const handleSOS = () => {
-    if (!("geolocation" in navigator)) {
-      if (window.confirm("Location not supported. Call emergency (102)?")) window.location.href = "tel:102";
-      return;
-    }
+    if (!navigator.geolocation) return alert("Geolocation not supported");
+
     setSosLoading(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      () => {
         setSosLoading(false);
-        const { latitude, longitude } = pos.coords;
-        const confirmed = window.confirm(
-          `Location found:\nLat: ${latitude.toFixed(5)}\nLon: ${longitude.toFixed(5)}\n\nCall emergency (102)?`
-        );
-        if (confirmed) window.location.href = "tel:102";
+        window.location.href = "tel:102";
       },
-      (err) => {
-        setSosLoading(false);
-        console.error("Geolocation error:", err);
-        if (window.confirm("Unable to get location. Call emergency (102)?")) window.location.href = "tel:102";
-      },
-      { enableHighAccuracy: true, timeout: 8000 }
+      () => setSosLoading(false)
     );
   };
 
   return (
     <div className="app-root">
-      {/* NAVBAR (green theme) */}
-      <header className="topbar topbar--green" role="banner">
+      {/* ================= NAVBAR ================= */}
+      <header className="topbar">
         <div className="topbar-inner container">
-          {/* Left: brand */}
-          <div className="brand-left">
-            <Link to="/" className="brand-link" onClick={() => setMobileOpen(false)}>
-              <span className="brand-title">FindMyDoctor</span>
-            </Link>
-          </div>
+          <Link to="/" className="brand">FindMyDoctor</Link>
 
-          {/* Center: search */}
-          <div className="center-search" role="search">
-            <form className="nav-search" onSubmit={submitSearch} aria-label="Search doctors">
-              <input
-                type="search"
-                placeholder="Search doctors, speciality or hospital..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                aria-label="Search"
-                className="nav-search-input"
-              />
-              <button type="submit" className="btn search-btn" aria-label="Search">Search</button>
-            </form>
-          </div>
+          <form className="nav-search" onSubmit={submitSearch}>
+            <input
+              type="search"
+              placeholder="Search doctors, speciality or hospital..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <button type="submit">Search</button>
+          </form>
 
-          {/* Right: links and actions */}
-          <nav className={`nav ${mobileOpen ? "open" : ""}`} aria-label="Main navigation">
-            <ul className="nav-links" role="menubar">
-              <li role="none"><Link to="/" role="menuitem" onClick={() => setMobileOpen(false)}>Home</Link></li>
-              <li role="none"><Link to="/doctors" role="menuitem" onClick={() => setMobileOpen(false)}>Doctors</Link></li>
-              <li role="none"><Link to="/dashboard" role="menuitem" onClick={() => setMobileOpen(false)}>Dashboard</Link></li>
-              <li role="none"><Link to="/login" role="menuitem" onClick={() => setMobileOpen(false)}>Login</Link></li>
-            </ul>
+          <nav className={`nav ${mobileOpen ? "open" : ""}`}>
+            <Link to="/">Home</Link>
+            <Link to="/doctors">Doctors</Link>
 
-            <div className="nav-actions">
-              <button className="btn sos-btn" onClick={handleSOS} aria-pressed={sosLoading}>
-                {sosLoading ? "Locating..." : "🚨 SOS"}
-              </button>
+            {isLoggedIn && <Link to="/dashboard">Dashboard</Link>}
 
-              <button className="btn primary" onClick={() => { navigate("/doctors"); setMobileOpen(false); }}>
-                Book Appointment
-              </button>
-            </div>
+            {!isLoggedIn ? (
+              <Link to="/login">Login</Link>
+            ) : (
+              <span className="nav-link-btn" onClick={handleLogout}>Logout</span>
+            )}
+
+            <button className="nav-btn sos" onClick={handleSOS}>
+              {sosLoading ? "..." : "🚨 SOS"}
+            </button>
+
+            <button
+              className="nav-btn primary"
+              onClick={() => navigate("/doctors")}
+            >
+              Book Appointment
+            </button>
           </nav>
 
-          <div className="mobile-toggle">
-            <button
-              className="hamburger"
-              onClick={() => setMobileOpen((s) => !s)}
-              aria-expanded={mobileOpen}
-              aria-label="Toggle navigation"
-            >
-              <span className="ham-line" />
-              <span className="ham-line" />
-              <span className="ham-line" />
-            </button>
-          </div>
+          <button
+            className="hamburger"
+            onClick={() => setMobileOpen((s) => !s)}
+          >
+            ☰
+          </button>
         </div>
       </header>
 
-      {/* MAIN */}
+      {/* ================= MAIN ================= */}
       <main className="main-content">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/doctors" element={<DoctorList />} />
           <Route path="/doctors/:id" element={<DoctorProfile />} />
-          <Route path="/book/:id" element={<BookAppointment />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+
+          <Route element={<PrivateRoute />}>
+            <Route path="/book/:id" element={<BookAppointment />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/admin/add-doctor" element={<AddDoctor />} />
+            <Route path="/admin/doctor/:id/slots" element={<ManageSlots />} />
+          </Route>
         </Routes>
       </main>
 
-      {/* FOOTER — professional layout */}
-      <footer className="site-footer site-footer--clean" role="contentinfo">
+      {/* ================= FOOTER ================= */}
+      <footer className="footer">
         <div className="container footer-grid">
-          <div className="footer-col footer-brand">
-            <div className="brand-title">FindMyDoctor</div>
-            <p className="muted">Comprehensive medical search & booking — demo</p>
-            <div className="contact" aria-label="Contact" style={{ marginTop: 12 }}>
-              <div className="muted">📞 <a href="tel:+911234567890">+91 12345 67890</a></div>
-              <div className="muted">✉️ <a href="mailto:help@findmydoctor.example">help@findmydoctor.example</a></div>
-            </div>
+
+          {/* BRAND */}
+          <div className="footer-brand">
+            <h3>FindMyDoctor</h3>
+            <p className="muted">
+              Trusted medical search & appointment booking platform.
+            </p>
           </div>
 
+          {/* EXPLORE */}
           <div className="footer-col">
             <h4>Explore</h4>
-            <ul className="footer-links-list">
-              <li><Link to="/doctors">Find Doctors</Link></li>
-              <li><a href="#services">Services</a></li>
-              <li><Link to="/dashboard">Dashboard</Link></li>
-              <li><Link to="/login">Login</Link></li>
-            </ul>
+            <Link to="/doctors">Find Doctors</Link>
+            <Link to="/dashboard">Dashboard</Link>
+            <Link to="/doctors">Book Appointment</Link>
           </div>
 
+          {/* ACCOUNT */}
           <div className="footer-col">
-            <h4>Company</h4>
-            <ul className="footer-links-list">
-              <li><a href="#about">About</a></li>
-              <li><a href="#careers">Careers</a></li>
-              <li><a href="#contact">Contact</a></li>
-              <li><a href="#partners">Partners</a></li>
-            </ul>
-          </div>
-
-          <div className="footer-col">
-            <h4>Stay updated</h4>
-            <form className="footer-newsletter" onSubmit={(e) => { e.preventDefault(); alert("Subscribed!"); }}>
-              <label htmlFor="footer-nl" className="sr-only">Email</label>
-              <input id="footer-nl" className="nav-search-input" placeholder="Your email address" />
-              <button className="btn footer-sub" type="submit">Subscribe</button>
-            </form>
-
-            <div className="socials" style={{ marginTop: 12 }}>
-              <a className="social-link" href="#" aria-label="Twitter">Twitter</a>
-              <a className="social-link" href="#" aria-label="Instagram">Instagram</a>
-              <a className="social-link" href="#" aria-label="LinkedIn">LinkedIn</a>
-            </div>
+            <h4>Account</h4>
+            {!isLoggedIn ? (
+              <Link to="/login">Login</Link>
+            ) : (
+              <>
+                <Link to="/dashboard">My Dashboard</Link>
+                <span className="footer-logout" onClick={handleLogout}>
+                  Logout
+                </span>
+              </>
+            )}
           </div>
         </div>
 
-        <div className="footer-legal">
-          <div className="container footer-legal-inner">
-            <div className="muted">© {new Date().getFullYear()} FindMyDoctor — Demo. All rights reserved.</div>
-            <div className="legal-links">
-              <a href="#privacy">Privacy Policy</a>
-              <a href="#terms">Terms of Use</a>
-              <a href="#security">Security</a>
-            </div>
-          </div>
+        {/* COPYRIGHT */}
+        <div className="footer-bottom">
+          © {new Date().getFullYear()} FindMyDoctor — All rights reserved
         </div>
       </footer>
     </div>

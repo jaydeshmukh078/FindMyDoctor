@@ -1,300 +1,200 @@
 import React, { useState, useEffect } from "react";
-import "./Login.css";
 import { useNavigate } from "react-router-dom";
-
-const USERS_KEY = "fmd_users";
-const CURRENT_KEY = "fmd_current";
+import API from "../utils/api";
+import "./Login.css";
 
 export default function Login() {
-  const [mode, setMode] = useState("login"); // login | signup
-  const [showPwd, setShowPwd] = useState(false);
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [mode, setMode] = useState("login");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // login form
   const [login, setLogin] = useState({ email: "", password: "" });
-  const [loginErr, setLoginErr] = useState({});
-
-  // signup form
   const [signup, setSignup] = useState({
     name: "",
     email: "",
+    phoneNumber: "",
+    gender: "",
+    age: "",
     password: "",
     confirm: "",
   });
-  const [signErr, setSignErr] = useState({});
 
-  const [user, setUser] = useState(null);
-
-  // load logged user
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(CURRENT_KEY);
-      if (raw) setUser(JSON.parse(raw));
-    } catch { }
-  }, []);
+    if (localStorage.getItem("token")) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
 
-  // -------- utilities ----------
-  const getUsers = () => {
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
     try {
-      const u = localStorage.getItem(USERS_KEY);
-      return u ? JSON.parse(u) : [];
-    } catch {
-      return [];
+      const res = await API.post("/auth/login", login);
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const saveUsers = (arr) => {
-    localStorage.setItem(USERS_KEY, JSON.stringify(arr));
-  };
-
-  // -------- SIGNUP --------
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
-    const err = {};
+    setError("");
 
-    if (!signup.name.trim()) err.name = "Name required.";
-    if (!signup.email.trim()) err.email = "Email required.";
-    else if (!/^\S+@\S+\.\S+$/.test(signup.email)) err.email = "Invalid email.";
-    if (!signup.password) err.password = "Password required.";
-    if (signup.password !== signup.confirm)
-      err.confirm = "Passwords do not match.";
-
-    if (Object.keys(err).length) {
-      setSignErr(err);
+    if (signup.password !== signup.confirm) {
+      setError("Passwords do not match");
       return;
     }
 
     setLoading(true);
+    try {
+      const res = await API.post("/auth/register", {
+        name: signup.name,
+        email: signup.email,
+        password: signup.password,
+        phoneNumber: signup.phoneNumber,
+        gender: signup.gender,
+        age: signup.age,
+      });
 
-    const users = getUsers();
-    const exists = users.find(
-      (u) => u.email.toLowerCase() === signup.email.toLowerCase()
-    );
-
-    if (exists) {
-      setSignErr({ email: "Email already registered." });
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.message || "Signup failed");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const newUser = {
-      id: Date.now(),
-      name: signup.name.trim(),
-      email: signup.email.trim().toLowerCase(),
-      password: signup.password,
-    };
-
-    users.push(newUser);
-    saveUsers(users);
-
-    localStorage.setItem(CURRENT_KEY, JSON.stringify(newUser));
-    setUser(newUser);
-
-    setLoading(false);
-    alert("Signup successful! Logged in.");
   };
-
-  // -------- LOGIN --------
-  const handleLogin = (e) => {
-    e.preventDefault();
-    const err = {};
-
-    if (!login.email.trim()) err.email = "Email required.";
-    if (!login.password) err.password = "Password required.";
-
-    if (Object.keys(err).length) {
-      setLoginErr(err);
-      return;
-    }
-
-    setLoading(true);
-
-    const users = getUsers();
-    const found = users.find(
-      (u) =>
-        u.email.toLowerCase() === login.email.toLowerCase() &&
-        u.password === login.password
-    );
-
-    if (!found) {
-      setLoginErr({ general: "Invalid email or password." });
-      setLoading(false);
-      return;
-    }
-
-    localStorage.setItem(CURRENT_KEY, JSON.stringify(found));
-    setUser(found);
-
-    setLoading(false);
-    alert("Login successful!");
-  };
-
-  // -------- LOGOUT --------
-  const logout = () => {
-    localStorage.removeItem(CURRENT_KEY);
-    setUser(null);
-  };
-
-  // -------- RENDER --------
-  if (user) {
-    return (
-      <div className="login-page">
-        <div className="login-card">
-          <h2>Welcome, {user.name || user.email}</h2>
-          <p className="muted">{user.email}</p>
-
-          <button
-            className="btn primary"
-            onClick={() => navigate("/dashboard")}
-          >
-            Go to Dashboard
-          </button>
-
-          <button className="btn logout" onClick={logout}>
-            Logout
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        {/* MODE SWITCH */}
-        <div className="switch-row">
+    <div className="auth-page">
+      <div className="auth-card">
+        <h2 className="auth-title">
+          {mode === "login" ? "Welcome Back" : "Create Account"}
+        </h2>
+        <p className="auth-sub">
+          {mode === "login"
+            ? "Login to manage your appointments"
+            : "Signup to book doctor appointments"}
+        </p>
+
+        <div className="auth-switch">
           <button
-            className={mode === "login" ? "switch-btn active" : "switch-btn"}
-            onClick={() => {
-              setMode("login");
-              setLoginErr({});
-            }}
+            className={mode === "login" ? "active" : ""}
+            onClick={() => setMode("login")}
           >
             Login
           </button>
-
           <button
-            className={mode === "signup" ? "switch-btn active" : "switch-btn"}
-            onClick={() => {
-              setMode("signup");
-              setSignErr({});
-            }}
+            className={mode === "signup" ? "active" : ""}
+            onClick={() => setMode("signup")}
           >
             Signup
           </button>
         </div>
 
-        {/* LOGIN */}
-        {mode === "login" && (
-          <form className="login-form" onSubmit={handleLogin}>
-            {loginErr.general && (
-              <div className="error-box">{loginErr.general}</div>
-            )}
+        {error && <div className="auth-error">{error}</div>}
 
-            <label>
-              Email
-              <input
-                type="email"
-                value={login.email}
-                onChange={(e) =>
-                  setLogin({ ...login, email: e.target.value })
-                }
-                className={loginErr.email ? "input error" : "input"}
-              />
-              {loginErr.email && <div className="field-error">{loginErr.email}</div>}
-            </label>
+        {mode === "login" ? (
+          <form onSubmit={handleLogin} className="auth-form">
+            <input
+              type="email"
+              placeholder="Email address"
+              value={login.email}
+              onChange={(e) => setLogin({ ...login, email: e.target.value })}
+              required
+            />
 
-            <label>
-              Password
-              <div className="pwd-row">
-                <input
-                  type={showPwd ? "text" : "password"}
-                  value={login.password}
-                  onChange={(e) =>
-                    setLogin({ ...login, password: e.target.value })
-                  }
-                  className={loginErr.password ? "input error" : "input"}
-                />
-                <button
-                  type="button"
-                  className="show-btn"
-                  onClick={() => setShowPwd(!showPwd)}
-                >
-                  {showPwd ? "Hide" : "Show"}
-                </button>
-              </div>
-              {loginErr.password && (
-                <div className="field-error">{loginErr.password}</div>
-              )}
-            </label>
+            <input
+              type="password"
+              placeholder="Password"
+              value={login.password}
+              onChange={(e) => setLogin({ ...login, password: e.target.value })}
+              required
+            />
 
-            <button type="submit" className="btn primary" disabled={loading}>
+            <button type="submit" disabled={loading}>
               {loading ? "Please wait..." : "Login"}
             </button>
           </form>
-        )}
+        ) : (
+          <form onSubmit={handleSignup} className="auth-form">
+            <input
+              placeholder="Full name"
+              value={signup.name}
+              onChange={(e) => setSignup({ ...signup, name: e.target.value })}
+              required
+            />
 
-        {/* SIGNUP */}
-        {mode === "signup" && (
-          <form className="login-form" onSubmit={handleSignup}>
-            <label>
-              Name
-              <input
-                type="text"
-                value={signup.name}
+            <input
+              type="email"
+              placeholder="Email address"
+              value={signup.email}
+              onChange={(e) => setSignup({ ...signup, email: e.target.value })}
+              required
+            />
+
+            <input
+              placeholder="Phone number"
+              value={signup.phoneNumber}
+              onChange={(e) =>
+                setSignup({ ...signup, phoneNumber: e.target.value })
+              }
+              required
+            />
+
+            <div className="auth-row">
+              <select
+                value={signup.gender}
                 onChange={(e) =>
-                  setSignup({ ...signup, name: e.target.value })
+                  setSignup({ ...signup, gender: e.target.value })
                 }
-                className={signErr.name ? "input error" : "input"}
-              />
-              {signErr.name && <div className="field-error">{signErr.name}</div>}
-            </label>
+                required
+              >
+                <option value="">Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
 
-            <label>
-              Email
               <input
-                type="email"
-                value={signup.email}
+                type="number"
+                placeholder="Age"
+                value={signup.age}
                 onChange={(e) =>
-                  setSignup({ ...signup, email: e.target.value })
+                  setSignup({ ...signup, age: e.target.value })
                 }
-                className={signErr.email ? "input error" : "input"}
+                required
               />
-              {signErr.email && <div className="field-error">{signErr.email}</div>}
-            </label>
+            </div>
 
-            <label>
-              Password
-              <input
-                type="password"
-                value={signup.password}
-                onChange={(e) =>
-                  setSignup({ ...signup, password: e.target.value })
-                }
-                className={signErr.password ? "input error" : "input"}
-              />
-              {signErr.password && (
-                <div className="field-error">{signErr.password}</div>
-              )}
-            </label>
+            <input
+              type="password"
+              placeholder="Password"
+              value={signup.password}
+              onChange={(e) =>
+                setSignup({ ...signup, password: e.target.value })
+              }
+              required
+            />
 
-            <label>
-              Confirm Password
-              <input
-                type="password"
-                value={signup.confirm}
-                onChange={(e) =>
-                  setSignup({ ...signup, confirm: e.target.value })
-                }
-                className={signErr.confirm ? "input error" : "input"}
-              />
-              {signErr.confirm && (
-                <div className="field-error">{signErr.confirm}</div>
-              )}
-            </label>
+            <input
+              type="password"
+              placeholder="Confirm password"
+              value={signup.confirm}
+              onChange={(e) =>
+                setSignup({ ...signup, confirm: e.target.value })
+              }
+              required
+            />
 
-            <button type="submit" className="btn primary" disabled={loading}>
+            <button type="submit" disabled={loading}>
               {loading ? "Please wait..." : "Create Account"}
             </button>
           </form>

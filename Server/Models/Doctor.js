@@ -1,7 +1,4 @@
-// server/models/Doctor.js
-
 const mongoose = require("mongoose");
-
 const doctorSchema = new mongoose.Schema(
   {
     // Basic info
@@ -10,51 +7,42 @@ const doctorSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-
-    specialization: {
+specialization: {
       type: String,
       required: true,
       trim: true,
     },
-
     location: {
       type: String,
       required: true,
       trim: true,
     },
-
     // Professional info
     fees: {
       type: Number,
       required: true,
     },
-
     experience: {
       type: Number,
       default: 1, // years
     },
-
     about: {
       type: String,
       default: "",
     },
-
     imageUrl: {
       type: String,
       default: "",
     },
-
     // Contact / clinic info
     contactNumber: {
       type: String,
       default: "",
     },
-
     clinicAddress: {
       type: String,
       default: "",
     },
-
     // Ratings system
     ratingAverage: {
       type: Number,

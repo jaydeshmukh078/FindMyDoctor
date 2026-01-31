@@ -1,20 +1,65 @@
 const express = require("express");
 const Doctor = require("../models/Doctor");
-const auth = require("../Middleware/auth"); // for protected routes if needed
+const auth = require("../Middleware/auth");
 
 const router = express.Router();
 
-/*
-  GET /doctors
-  Query params:
-    - specialization
-    - location
-    - minFees
-    - maxFees
-    - search  (keyword: name/specialization/location)
-    - date    (optional: filter by availability date)
-*/
+/* --------------------------------------------------
+   HELPER: Doctor Normalizer
+   (frontend compatibility layer)
+-------------------------------------------------- */
+const normalizeDoctor = (doc) => {
+  if (!doc) return null;
 
+  return {
+    id: doc._id,
+    _id: doc._id,
+
+    // basic
+    name: doc.name,
+    speciality: doc.specialization,      // 🔑 frontend uses this
+    specialization: doc.specialization,
+    hospital: doc.location,               // 🔑 frontend uses this
+    location: doc.location,
+
+    // money / experience
+    fee: `₹${doc.fees}`,                  // 🔑 frontend fallback
+    fees: doc.fees,
+    experience: `${doc.experience} yrs`,
+
+    // ratings
+    rating: doc.ratingAverage,
+    ratingAverage: doc.ratingAverage,
+
+    // profile
+    about: doc.about,
+    image: doc.imageUrl,
+    imageUrl: doc.imageUrl,
+
+    // flags
+    online: true,                          // default (can enhance later)
+
+    // slots (VERY IMPORTANT)
+    availability: doc.availableSlots
+      ? doc.availableSlots.flatMap(d =>
+          d.slots.map(t => `${d.date} ${t}`)
+        )
+      : [],
+
+    availableSlots: doc.availableSlots,
+
+    // clinic
+    contactNumber: doc.contactNumber,
+    clinicAddress: doc.clinicAddress,
+    timings: doc.timings,
+
+    createdAt: doc.createdAt,
+  };
+};
+
+/* --------------------------------------------------
+   GET /doctors
+-------------------------------------------------- */
 router.get("/", async (req, res) => {
   try {
     const { specialization, location, minFees, maxFees, search, date } = req.query;
@@ -45,7 +90,6 @@ router.get("/", async (req, res) => {
 
     let doctors;
 
-    // If date is given, we also check availableSlots for that date
     if (date) {
       doctors = await Doctor.find({
         ...query,
@@ -55,17 +99,19 @@ router.get("/", async (req, res) => {
       doctors = await Doctor.find(query);
     }
 
-    res.json(doctors);
+    // 🔥 NORMALIZE HERE
+    const formattedDoctors = doctors.map(normalizeDoctor);
+
+    res.json(formattedDoctors);
   } catch (err) {
     console.error("GET /doctors error:", err.message);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-/*
-  GET /doctors/:id
-  Single doctor profile
-*/
+/* --------------------------------------------------
+   GET /doctors/:id
+-------------------------------------------------- */
 router.get("/:id", async (req, res) => {
   try {
     const doctor = await Doctor.findById(req.params.id);
@@ -74,32 +120,30 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ message: "Doctor not found" });
     }
 
-    res.json(doctor);
+    // 🔥 NORMALIZE SINGLE DOCTOR
+    res.json(normalizeDoctor(doctor));
   } catch (err) {
     console.error("GET /doctors/:id error:", err.message);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-/*
-  POST /doctors
-  Add new doctor
-  (Protected with auth – later tum isko sirf admin ke liye rakh sakte ho)
-*/
+/* --------------------------------------------------
+   POST /doctors (admin)
+-------------------------------------------------- */
 router.post("/", auth, async (req, res) => {
   try {
     const doctor = await Doctor.create(req.body);
-    res.status(201).json(doctor);
+    res.status(201).json(normalizeDoctor(doctor));
   } catch (err) {
     console.error("POST /doctors error:", err.message);
     res.status(400).json({ message: "Invalid data", error: err.message });
   }
 });
 
-/*
-  PUT /doctors/:id
-  Update doctor
-*/
+/* --------------------------------------------------
+   PUT /doctors/:id
+-------------------------------------------------- */
 router.put("/:id", auth, async (req, res) => {
   try {
     const doctor = await Doctor.findByIdAndUpdate(req.params.id, req.body, {
@@ -110,17 +154,16 @@ router.put("/:id", auth, async (req, res) => {
       return res.status(404).json({ message: "Doctor not found" });
     }
 
-    res.json(doctor);
+    res.json(normalizeDoctor(doctor));
   } catch (err) {
     console.error("PUT /doctors/:id error:", err.message);
     res.status(400).json({ message: "Invalid data" });
   }
 });
 
-/*
-  DELETE /doctors/:id
-  Delete doctor
-*/
+/* --------------------------------------------------
+   DELETE /doctors/:id
+-------------------------------------------------- */
 router.delete("/:id", auth, async (req, res) => {
   try {
     const doctor = await Doctor.findByIdAndDelete(req.params.id);
